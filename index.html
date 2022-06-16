@@ -1,0 +1,129 @@
+<div id="stage"></div>
+<script src="https://82mou.github.io/threejs/js/three.js"></script>
+<script src="https://82mou.github.io/threejs/js/OrbitControls.js"></script>
+
+<script>
+  window.onload = () => {
+    let scene;
+    let sphereEarth;
+    let sphereCrowd;
+    let sphereUniverse;
+    let camera;
+    let light;
+    let ambient;
+    let gridHelper;
+    let axisHelper;
+    let lightHelper;
+    let renderer;
+    let loader;
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let controls;
+
+    // ステージを作る
+    scene = new THREE.Scene();
+
+    // 地球画像
+    loader = new THREE.TextureLoader();
+    loader.load(
+      "https://82mou.github.io/threejs/img/real-earth.jpg",
+      (texture) => {
+        createEarth(texture);
+        render();
+      }
+    );
+
+    // 雲画像
+    loader.load("https://82mou.github.io/threejs/img/crowd.png", (texture) => {
+      createCrowd(texture);
+      render();
+    });
+
+    // 宇宙画像
+    loader.load(
+      "https://82mou.github.io/threejs/img/universe.jpg",
+      (texture) => {
+        createUniverse(texture);
+        render();
+      }
+    );
+
+    // 地球を作る
+    const createEarth = (texture) => {
+      sphereEarth = new THREE.Mesh(
+        new THREE.SphereGeometry(80, 20, 20), // 形状
+        new THREE.MeshLambertMaterial({
+          map: texture,
+        })
+      );
+      sphereEarth.position.set(0, 0, 0);
+      scene.add(sphereEarth);
+    };
+
+    // 雲を作る
+    const createCrowd = (texture) => {
+      sphereCrowd = new THREE.Mesh(
+        new THREE.SphereGeometry(82, 20, 20),
+        new THREE.MeshLambertMaterial({
+          map: texture,
+          transparent: true,
+          side: THREE.DoubleSide, // 裏からも見える
+        })
+      );
+      sphereCrowd.position.set(0, 0, 0);
+      scene.add(sphereCrowd);
+    };
+
+    // 宇宙を作る
+    const createUniverse = (texture) => {
+      sphereUniverse = new THREE.Mesh(
+        new THREE.SphereGeometry(10000, 20, 20),
+        new THREE.MeshLambertMaterial({
+          map: texture,
+          side: THREE.DoubleSide,
+        })
+      );
+      sphereUniverse.position.set(0, 0, 0);
+      scene.add(sphereUniverse);
+    };
+
+    // 点光源を作る
+    light = new THREE.PointLight(0xffffff, 2.5, 0);
+    light.position.set(100, 130, 80);
+    scene.add(light);
+
+    // 環境光源を作る
+    ambient = new THREE.AmbientLight(0x222222);
+    scene.add(ambient);
+
+    // カメラを作る
+    camera = new THREE.PerspectiveCamera(60, width / height, 1, 1000000);
+    camera.position.set(200, 100, 300);
+    camera.lookAt(scene.position);
+
+    // helper
+    // gridHelper = new THREE.GridHelper(200, 20);
+    // scene.add(gridHelper);
+    // axisHelper = new THREE.AxisHelper(1000);
+    // scene.add(axisHelper);
+    // lightHelper = new THREE.DirectionalLightHelper(light, 20);
+    // scene.add(lightHelper);
+
+    controls = new THREE.OrbitControls(camera);
+
+    // renderer
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(width, height);
+    renderer.setClearColor(0xeeeeee);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    document.getElementById("stage").appendChild(renderer.domElement);
+
+    const render = () => {
+      requestAnimationFrame(render);
+      sphereEarth.rotation.y += 0.0005;
+      sphereCrowd.rotation.y += 0.001;
+      controls.update();
+      renderer.render(scene, camera);
+    };
+  };
+</script>
