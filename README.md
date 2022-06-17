@@ -1,4 +1,4 @@
 # URL
-https://kantashimizu0507.github.io/Earth/
+https://kantashimizu0507.github.io/webGL/
 <br>
-https://kantashimizu0507.github.io/Earth/birds.html
+https://kantashimizu0507.github.io/webGL/birds.html
