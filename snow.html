@@ -1,0 +1,197 @@
+<meta charset="utf-8" />
+<meta
+  name="viewport"
+  content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0"
+/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/89/three.min.js"></script>
+<!-- dat.gui.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.5.1/dat.gui.min.js"></script>
+<!-- Stats.js -->
+<script src="https://dl.dropbox.com/s/m1qor6z15o64wkc/stats.min.js?dl=0"></script>
+<body>
+  <canvas id="myCanvas"></canvas>
+</body>
+<style>
+  * {
+    margin: 0;
+  }
+  canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    margin: auto;
+    position: fixed;
+    overflow: hidden;
+  }
+</style>
+<script>
+  let stats;
+  let params = {
+    snowfall: 5,
+  };
+
+  const init = () => {
+    let frame = 5;
+    let meshList = [];
+    let renderer = new THREE.WebGLRenderer({
+      canvas: document.querySelector("#myCanvas"),
+    });
+    renderer.setPixelRatio(1);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    let camera = new THREE.PerspectiveCamera(
+      45,
+      window.innerWidth / window.innerHeight
+    );
+    camera.position.set(0, 0, -10);
+    camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+    let scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x232323);
+    scene.fog = new THREE.Fog(0x999999, 0, 2000);
+
+    stats = new Stats();
+    document.body.appendChild(stats.dom);
+
+    let gui = new dat.GUI();
+    gui.add(params, "snowfall", 0, 100).step(1);
+
+    window.addEventListener(
+      "resize",
+      () => {
+        onWindowResize(camera, renderer);
+      },
+      false
+    );
+
+    const tick = () => {
+      let mesh = new SnowFlakes();
+      scene.add(mesh);
+      meshList.push(mesh);
+      for (let i = 0; i < meshList.length; i++) {
+        meshList[i].update();
+      }
+
+      renderer.render(scene, camera);
+      requestAnimationFrame(tick);
+
+      frame++;
+      if (frame % 2 == 0) {
+        return;
+      }
+
+      stats.update();
+    };
+    tick();
+  };
+
+  window.addEventListener("load", init);
+
+  class SnowFlakes extends THREE.Object3D {
+    constructor() {
+      super();
+      this.snowList = [];
+      this.angle = 0;
+
+      let length = params.snowfall; //雪の数
+
+      let geometry = new THREE.BufferGeometry();
+
+      let materials = [];
+
+      let textureLoader = new THREE.TextureLoader();
+      let sprite1 = textureLoader.load(
+        "https://dl.dropbox.com/s/13ec3ht27adnu1l/snowflake1.png?dl=0"
+      );
+      let sprite2 = textureLoader.load(
+        "https://dl.dropbox.com/s/rczse8o8zt5mxe6/snowflake2.png?dl=0"
+      );
+      let sprite3 = textureLoader.load(
+        "https://dl.dropbox.com/s/cs17pph4bu096k7/snowflake3.png?dl=0"
+      );
+      let sprite4 = textureLoader.load(
+        "https://dl.dropbox.com/s/plwtcfvokuoz931/snowflake4.png?dl=0"
+      );
+      let sprite5 = textureLoader.load(
+        "https://dl.dropbox.com/s/uhh77omqdwqo2z5/snowflake5.png?dl=0"
+      );
+
+      let vertices = [];
+      for (let i = 0; i < length; i++) {
+        let x = getRandom(0, 500);
+        let y = getRandom(0, 500);
+        let z = getRandom(0, 500);
+        vertices.push(x, y, z);
+      }
+
+      geometry.addAttribute(
+        "position",
+        new THREE.Float32BufferAttribute(vertices, 3)
+      );
+
+      let parameters = [
+        ["#FFFFFF", sprite2, getRandom(10, 10)],
+        ["#FFFFFF", sprite3, getRandom(10, 15)],
+        ["#FFFFFF", sprite1, getRandom(10, 15)],
+        ["#FFFFFF", sprite5, getRandom(5, 10)],
+        ["#FFFFFF", sprite4, getRandom(5, 10)],
+      ];
+
+      for (let i = 0; i < parameters.length; i++) {
+        let sprite = parameters[i][1];
+        let size = parameters[i][2];
+        materials[i] = new THREE.PointsMaterial({
+          size: size,
+          map: sprite,
+          blending: THREE.AdditiveBlending,
+          depthTest: false,
+          transparent: true,
+        });
+
+        let particles = new THREE.Points(geometry, materials[i]);
+        particles.rotation.x = Math.random() * 360;
+        particles.rotation.y = Math.random() * 360;
+        particles.rotation.z = Math.random() * 360;
+        particles.vx = 0;
+        particles.vy = 0;
+        particles.material.opacity = 0;
+
+        this.add(particles);
+        this.snowList.push(particles);
+      }
+    }
+
+    update() {
+      this.angle += 0.001;
+
+      for (let i = 0; i < this.snowList.length; i++) {
+        this.snowList[i].material.opacity += 0.01;
+        this.snowList[i].vy -= 1;
+        this.snowList[i].vx = Math.sin(this.angle) * Math.cos(this.angle) * 10;
+
+        this.snowList[i].vx *= 0.2;
+        this.snowList[i].vy *= 0.6;
+
+        this.snowList[i].position.x += this.snowList[i].vx;
+        this.snowList[i].position.y += this.snowList[i].vy;
+
+        if (this.snowList[i].position.y < -1000) {
+          this.snowList[i].material.opacity += 0.1;
+          this.remove(this.snowList[i]);
+          this.snowList.splice(i, 1);
+          i -= 1;
+        }
+      }
+    }
+  }
+
+  onWindowResize = (camera, renderer) => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  };
+
+  getRandom = (min, max) => {
+    return Math.random() * (max - min) + min;
+  };
+</script>
